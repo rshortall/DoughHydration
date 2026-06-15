@@ -7,72 +7,62 @@
 
 import SwiftUI
 
+@Observable
+class HydrationModel {
+
+    var dough: Int = 500
+
+    var water: Int = 300
+
+    var hydration: Double {
+        get {
+            if water <= 0 {
+                return 0
+            } else {
+                return Double(water) / Double(dough)
+            }
+        } set {
+            if newValue <= 0 {
+                water = 0
+            } else {
+                water = Int(Double(dough) * newValue)
+            }
+        }
+    }
+
+    var hydrationPercent: Int {
+        get { min(Int(hydration * 100.0), 100) }
+        set {
+            hydration = Double(newValue) / 100.0
+        }
+    }
+}
+
 struct ContentView: View {
 
-    @State var hydrationPercent: Double = 0.0
-    @State var doughAmount: Double = 0.0
-    @State var waterAmount: Double = 0.0
+    @State private var hapticGenerator: UISelectionFeedbackGenerator? = nil
 
-    @State var formattedWaterAmount: String = ""
-    @State var formattedDoughAmount: String = ""
-    @State var formattedHydrationAmount: String = ""
+    @State var viewModel = HydrationModel()
 
     var body: some View {
         VStack(spacing: 40) {
 
             Text("Hydration = Water / Dough")
 
-            LinkedScaleView(variable: $hydrationPercent, formattedVariable: $formattedHydrationAmount, maxValue: 1.0, stepValue: 0.01) {
-                updateWater()
-            }
-            .onChange(of: hydrationPercent) {
-                formattedHydrationAmount = String(format: "Hydration: %.0f", min(hydrationPercent * 100.0, 100.0))
+            LinkedScaleView(variable: $viewModel.hydrationPercent, title: "Hydration", maxValue: 100, stepValue: 1, unit: "%", itemWidth: 2.0, itemSpacing: 15.0, hapticGenerator: $hapticGenerator)
+
+            LinkedScaleView(variable: $viewModel.dough, title: "Dough", maxValue: 1000, stepValue: 1, unit: "g", itemWidth: 1.5, itemSpacing: 10.0, hapticGenerator: $hapticGenerator)
+
+            LinkedScaleView(variable: $viewModel.water, title: "Water", maxValue: 1000, stepValue: 1, unit: "g", itemWidth: 1.5, itemSpacing: 10.0, hapticGenerator: $hapticGenerator)
+        }
+        .onAppear {
+            if hapticGenerator == nil {
+                hapticGenerator = UISelectionFeedbackGenerator()
             }
 
-            LinkedScaleView(variable: $doughAmount, formattedVariable: $formattedDoughAmount, maxValue: 1000.0, stepValue: 1.0) {
-                updateHydration()
-            }
-            .onChange(of: doughAmount) {
-                formattedDoughAmount = String(format: "Dough: %.0f", doughAmount)
-            }
 
-            LinkedScaleView(variable: $waterAmount, formattedVariable: $formattedWaterAmount, maxValue: 1000.0, stepValue: 1.0) {
-                updateHydration()
-            }
-            .onChange(of: waterAmount) {
-                formattedWaterAmount = String(format: "Water: %.0f", waterAmount)
-            }
         }
         .padding()
-        .onAppear {
-
-            doughAmount = 500.0
-            waterAmount = 300.0
-
-            updateHydration()
-        }
-    }
-
-    private func updateHydration() {
-
-        guard doughAmount > 0 else {
-            hydrationPercent = 0
-            return
-        }
-
-        hydrationPercent = waterAmount / doughAmount
-
-        //print("Updatding hydration: \(hydrationPercent) = \(waterAmount) / \(doughAmount)")
-    }
-
-    private func updateWater() {
-
-        guard hydrationPercent > 0 else {
-            waterAmount = 0
-            return
-        }
-
-        waterAmount = doughAmount * hydrationPercent
     }
 }
 
