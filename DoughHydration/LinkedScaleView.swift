@@ -20,6 +20,9 @@ struct LinkedScaleView: View {
 
     let initialValue = 0.0
 
+    let secondaryUnit: String
+    let secondaryValue: String
+
     @State private var isUserScrolling = false
 
     @State private var appeared = false
@@ -37,9 +40,11 @@ struct LinkedScaleView: View {
 
                             ForEach(0..<range) { value in
 
+                                let calculatedTickHeight = tickHeight(for: value)
+
                                 Rectangle()
-                                    .fill(Color.red)
-                                    .frame(width: itemWidth, height: tickHeight(for: value))
+                                    .fill(Color.secondary)
+                                    .frame(width: itemWidth, height: calculatedTickHeight)
                                     .id(value)
                                     .overlay(numberIndicator(for: value), alignment: .bottom)
                                     .background(
@@ -59,13 +64,6 @@ struct LinkedScaleView: View {
                     .onScrollPhaseChange { oldPhase, newPhase in
                         isUserScrolling = newPhase == .interacting || newPhase == .decelerating
                     }
-//                    .onAppear {
-//
-//                        print("Setting initial scale value to: ", variable)
-//
-//                        reader.scrollTo(variable, anchor: .leading)
-//                        appeared = true
-//                    }
                     .task {
 
                         await MainActor.run {
@@ -104,27 +102,52 @@ struct LinkedScaleView: View {
                             .font(.custom("HelveticaNeue", size: 25.0))
                             .fontWeight(.light)
                             .padding(.top, 10)
+                            .allowsHitTesting(false)
 
                         Spacer()
 
-                        HStack(alignment: .top, spacing: 0) {
-                            Text("\(variable)")
-                                .font(.custom("HelveticaNeue", size: 70.0))
-                                .fontWeight(.light)
+                        VStack {
+                            HStack(alignment: .top, spacing: 0) {
+                                Text("\(variable)")
+                                    .font(.custom("HelveticaNeue", size: 70.0))
+                                    .fontWeight(.light)
+                                    .allowsHitTesting(false)
 
-                            Text("\(unit)")
-                                .font(.custom("HelveticaNeue-Thin", size: 40.0))
+                                Text("\(unit)")
+                                    .font(.custom("HelveticaNeue-Thin", size: 40.0))
+                                    .allowsHitTesting(false)
+                            }
+
+                            if secondaryUnit.isEmpty == false {
+                                HStack(alignment: .top) {
+                                    Text("\(secondaryValue)")
+                                        .font(.custom("HelveticaNeue", size: 20.0))
+                                        .fontWeight(.light)
+                                        .allowsHitTesting(false)
+
+                                    Text("\(secondaryUnit)")
+                                        .font(.custom("HelveticaNeue-Thin", size: 20.0))
+                                        .allowsHitTesting(false)
+                                }
+                            }
                         }
                     }
+                    .padding(.horizontal)
 
-                    Image(systemName: "triangle.fill")
-                        .resizable()
-                        .scaledToFit()
-                        .rotationEffect(.degrees(180.0))
-                        .frame(height: 15)
-                        .padding(.bottom, 10)
+//                    Rectangle()
+//                        .fill(Color.red)
+//                        .frame(width: itemWidth + 0.5, height: 40)
+//                        .offset(x: 1, y: 28)
+//                        .allowsHitTesting(false)
                 }
+
+                Rectangle()
+                    .fill(Color.red)
+                    .frame(width: itemWidth + 0.5, height: 40)
+                    .offset(x: 1, y: 110)
+                    .allowsHitTesting(false)
             }
+            .background(.secondary.opacity(0.2))
         }
         .onAppear {
             print("Initial val \(title): \(variable)")
@@ -151,12 +174,17 @@ struct LinkedScaleView: View {
 
     func tickHeight(for val: Int) -> CGFloat {
 
+        if abs(val - variable) < 3 {
+
+            return 40 - (CGFloat(abs(val - variable)) * 12)
+        }
+
         if val % 10 == 0 {
-            return 30
+            return 20
         }
 
         if val % 5 == 0 {
-            return 15
+            return 12
         }
 
         return 10
@@ -165,8 +193,9 @@ struct LinkedScaleView: View {
 
 #Preview {
     @Previewable @State var value: Int = 40
+    @Previewable @State var secondaryValue: String = "0.15"
     @Previewable @State var haptic: UISelectionFeedbackGenerator? = UISelectionFeedbackGenerator()
 
-    LinkedScaleView(variable: $value, title: "Dough", maxValue: 100, stepValue: 1, unit: "g", itemWidth: 2.0, itemSpacing: 10.0, hapticGenerator: $haptic)
-        .padding(20.0)
+    LinkedScaleView(variable: $value, title: "Dough", maxValue: 100, stepValue: 1, unit: "g", itemWidth: 2.0, itemSpacing: 10.0, secondaryUnit: "cups", secondaryValue: secondaryValue, hapticGenerator: $haptic)
+        .padding(.vertical, 20.0)
 }

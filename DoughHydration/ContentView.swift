@@ -7,37 +7,6 @@
 
 import SwiftUI
 
-@Observable
-class HydrationModel {
-
-    var dough: Int = 500
-
-    var water: Int = 300
-
-    var hydration: Double {
-        get {
-            if water <= 0 {
-                return 0
-            } else {
-                return Double(water) / Double(dough)
-            }
-        } set {
-            if newValue <= 0 {
-                water = 0
-            } else {
-                water = Int(Double(dough) * newValue)
-            }
-        }
-    }
-
-    var hydrationPercent: Int {
-        get { min(Int(hydration * 100.0), 100) }
-        set {
-            hydration = Double(newValue) / 100.0
-        }
-    }
-}
-
 struct ContentView: View {
 
     @State private var hapticGenerator: UISelectionFeedbackGenerator? = nil
@@ -45,24 +14,66 @@ struct ContentView: View {
     @State var viewModel = HydrationModel()
 
     var body: some View {
-        VStack(spacing: 40) {
+        NavigationStack {
+            VStack(spacing: 0) {
 
-            Text("Hydration = Water / Dough")
+                presetButtons
+                    .padding(.bottom, 20)
 
-            LinkedScaleView(variable: $viewModel.hydrationPercent, title: "Hydration", maxValue: 100, stepValue: 1, unit: "%", itemWidth: 2.0, itemSpacing: 15.0, hapticGenerator: $hapticGenerator)
+                VStack(spacing: 40) {
 
-            LinkedScaleView(variable: $viewModel.dough, title: "Dough", maxValue: 1000, stepValue: 1, unit: "g", itemWidth: 1.5, itemSpacing: 10.0, hapticGenerator: $hapticGenerator)
+                    LinkedScaleView(variable: $viewModel.hydrationPercent, title: "Hydration", maxValue: 100, stepValue: 1, unit: "%", itemWidth: 2.0, itemSpacing: 12.0, secondaryUnit: "", secondaryValue: "", hapticGenerator: $hapticGenerator)
 
-            LinkedScaleView(variable: $viewModel.water, title: "Water", maxValue: 1000, stepValue: 1, unit: "g", itemWidth: 1.5, itemSpacing: 10.0, hapticGenerator: $hapticGenerator)
-        }
-        .onAppear {
-            if hapticGenerator == nil {
-                hapticGenerator = UISelectionFeedbackGenerator()
+                    LinkedScaleView(variable: $viewModel.dough, title: "Dough", maxValue: 1000, stepValue: 1, unit: Constants.doughPrimaryUnit, itemWidth: 1.5, itemSpacing: 10.0, secondaryUnit: Constants.doughSecondaryUnit, secondaryValue: viewModel.doughSecondary, hapticGenerator: $hapticGenerator)
+
+                    LinkedScaleView(variable: $viewModel.water, title: "Water", maxValue: 1000, stepValue: 1, unit: Constants.waterPrimaryUnit, itemWidth: 1.5, itemSpacing: 10.0, secondaryUnit: Constants.waterSecondaryUnit, secondaryValue: viewModel.waterSecondary, hapticGenerator: $hapticGenerator)
+                }
             }
-
-
+            .onAppear {
+                if hapticGenerator == nil {
+                    hapticGenerator = UISelectionFeedbackGenerator()
+                }
+            }
+            .padding(.vertical)
+            .toolbar {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Button(action: {}) { Image(systemName: "gearshape") }
+                }
+            }
+            .navigationTitle("Hydration = Dough / Water")
+            .navigationBarTitleDisplayMode(.inline)
         }
-        .padding()
+    }
+
+    private var presetButtons: some View {
+
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack {
+
+                Button {
+
+                } label: {
+                    Text("White")
+                }
+                .buttonStyle(.bordered)
+
+                Button {
+
+                } label: {
+                    Text("Pizza")
+                }
+                .buttonStyle(.bordered)
+
+                Button {
+
+                } label: {
+                    Text("Foccacia")
+                }
+                .buttonStyle(.bordered)
+            }
+            .padding(.horizontal)
+            .contentMargins(.horizontal, 20)
+        }
     }
 }
 
