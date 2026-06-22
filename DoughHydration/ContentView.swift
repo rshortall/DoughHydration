@@ -9,24 +9,33 @@ import SwiftUI
 
 struct ContentView: View {
 
+    @State private var tooglePresets = false
+    @State private var toggleSettings = false
     @State private var hapticGenerator: UISelectionFeedbackGenerator? = nil
 
     @State var viewModel = HydrationModel()
+
+    @State private var presets: [Preset] = []
+
+    @AppStorage("showPresets") var showPresets: Bool = true
+    @AppStorage("showImperial") var showImperial: Bool = true
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
 
-                presetButtons
-                    .padding(.bottom, 20)
+                if showPresets {
+                    presetButtons
+                        .padding(.bottom, 20)
+                }
 
                 VStack(spacing: 40) {
 
-                    LinkedScaleView(variable: $viewModel.hydrationPercent, title: "Hydration", maxValue: 100, stepValue: 1, unit: "%", itemWidth: 2.0, itemSpacing: 12.0, secondaryUnit: "", secondaryValue: "", hapticGenerator: $hapticGenerator)
+                    LinkedScaleView(variable: $viewModel.dough, title: Constants.flour, maxValue: 1000, stepValue: 1, unit: Constants.doughPrimaryUnit, itemWidth: 1.5, itemSpacing: 10.0, secondaryUnit: showImperial ? Constants.doughSecondaryUnit : "", secondaryValue: viewModel.doughSecondary, hapticGenerator: $hapticGenerator)
 
-                    LinkedScaleView(variable: $viewModel.dough, title: "Dough", maxValue: 1000, stepValue: 1, unit: Constants.doughPrimaryUnit, itemWidth: 1.5, itemSpacing: 10.0, secondaryUnit: Constants.doughSecondaryUnit, secondaryValue: viewModel.doughSecondary, hapticGenerator: $hapticGenerator)
+                    LinkedScaleView(variable: $viewModel.water, title: Constants.water, maxValue: 1000, stepValue: 1, unit: Constants.waterPrimaryUnit, itemWidth: 1.5, itemSpacing: 10.0, secondaryUnit: showImperial ? Constants.waterSecondaryUnit : "", secondaryValue: viewModel.waterSecondary, hapticGenerator: $hapticGenerator)
 
-                    LinkedScaleView(variable: $viewModel.water, title: "Water", maxValue: 1000, stepValue: 1, unit: Constants.waterPrimaryUnit, itemWidth: 1.5, itemSpacing: 10.0, secondaryUnit: Constants.waterSecondaryUnit, secondaryValue: viewModel.waterSecondary, hapticGenerator: $hapticGenerator)
+                    LinkedScaleView(variable: $viewModel.hydrationPercent, title: Constants.hydration, maxValue: 100, stepValue: 1, unit: "%", itemWidth: 2.0, itemSpacing: 12.0, secondaryUnit: "", secondaryValue: "", fillColor: Color.yellow.opacity(0.2), hapticGenerator: $hapticGenerator)
                 }
             }
             .onAppear {
@@ -37,11 +46,59 @@ struct ContentView: View {
             .padding(.vertical)
             .toolbar {
                 ToolbarItemGroup(placement: .topBarTrailing) {
-                    Button(action: {}) { Image(systemName: "gearshape") }
+                    Button {
+                        tooglePresets.toggle()
+                    } label: {
+                        Image(systemName: "checklist")
+                    }
+                }
+
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Button {
+                        toggleSettings.toggle()
+                    } label: {
+                        Image(systemName: "gearshape")
+                    }
                 }
             }
-            .navigationTitle("Hydration = Dough / Water")
+            .sheet(isPresented: $tooglePresets) {
+                PresetPickerView(presets: presets) { updatedSelection in
+                    saveSelection(updatedSelection)
+                }
+            }
+            .sheet(isPresented: $toggleSettings) {
+                SettingsView()
+            }
+            .navigationTitle(Constants.title)
             .navigationBarTitleDisplayMode(.inline)
+        }
+        .task {
+
+            loadPresets()
+        }
+    }
+
+    private func loadPresets() {
+
+        if let value = UserDefaults.standard.object(forKey: "presets") as? Data {
+
+            let decoder = JSONDecoder()
+            if let decoded = try? decoder.decode([Preset].self, from: value) {
+                presets = decoded
+            }
+
+        } else {
+
+            let encoder = JSONEncoder()
+            presets = [
+                Preset(title: "White Bread", flour: 500, water: 300, isActive: true),
+                Preset(title: "Pizza", flour: 500, water: 325, isActive: true),
+                Preset(title: "Bagels", flour: 550, water: 308, isActive: true),
+                Preset(title: "Focaccia", flour: 550, water: 412, isActive: true)
+            ]
+            let encodedData = try? encoder.encode(presets)
+
+            UserDefaults.standard.set(encodedData, forKey: "presets")
         }
     }
 
@@ -49,31 +106,29 @@ struct ContentView: View {
 
         ScrollView(.horizontal, showsIndicators: false) {
             HStack {
+                ForEach(presets.filter { $0.isActive}) { preset in
+                    Button {
 
-                Button {
-
-                } label: {
-                    Text("White")
+                    } label: {
+                        Text(preset.title)
+                    }
+                    .buttonStyle(.bordered)
+                    .foregroundStyle(Color.primary)
                 }
-                .buttonStyle(.bordered)
-
-                Button {
-
-                } label: {
-                    Text("Pizza")
-                }
-                .buttonStyle(.bordered)
-
-                Button {
-
-                } label: {
-                    Text("Foccacia")
-                }
-                .buttonStyle(.bordered)
             }
             .padding(.horizontal)
             .contentMargins(.horizontal, 20)
         }
+    }
+
+    private func saveSelection(_ updatedSelection: [Preset]) {
+
+        presets = updatedSelection
+
+        let encoder = JSONEncoder()
+        let encodedData = try? encoder.encode(presets)
+
+        UserDefaults.standard.set(encodedData, forKey: "presets")
     }
 }
 

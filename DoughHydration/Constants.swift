@@ -9,6 +9,10 @@ import Foundation
 
 struct Constants {
 
+    static let title = "Hydration = Flour / Water"
+    static let hydration = "Hydration"
+    static let flour = "Flour"
+    static let water = "Water"
     static let doughPrimaryUnit = "g"
     static let waterPrimaryUnit = "ml"
     static let doughSecondaryUnit = "cups"
