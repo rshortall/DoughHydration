@@ -9,70 +9,127 @@ import SwiftUI
 
 struct ContentView: View {
 
-    @State var hydrationPercent: Double = 0.0
-    @State var doughAmount: Double = 0.0
-    @State var waterAmount: Double = 0.0
+    @State private var tooglePresets = false
+    @State private var toggleSettings = false
+    @State private var hapticGenerator: UISelectionFeedbackGenerator? = nil
 
-    @State var formattedWaterAmount: String = ""
-    @State var formattedDoughAmount: String = ""
-    @State var formattedHydrationAmount: String = ""
+    @State var viewModel = HydrationModel()
+
+    @State private var presets: [Preset] = []
+
+    @AppStorage("showPresets") var showPresets: Bool = true
+    @AppStorage("showImperial") var showImperial: Bool = true
 
     var body: some View {
-        VStack(spacing: 40) {
+        NavigationStack {
+            VStack(spacing: 0) {
 
-            Text("Hydration = Water / Dough")
+                if showPresets {
+                    presetButtons
+                        .padding(.bottom, 20)
+                }
 
-            LinkedScaleView(variable: $hydrationPercent, formattedVariable: $formattedHydrationAmount, maxValue: 1.0, stepValue: 0.01) {
-                updateWater()
-            }
-            .onChange(of: hydrationPercent) {
-                formattedHydrationAmount = String(format: "Hydration: %.0f", min(hydrationPercent * 100.0, 100.0))
-            }
+                VStack(spacing: 40) {
 
-            LinkedScaleView(variable: $doughAmount, formattedVariable: $formattedDoughAmount, maxValue: 1000.0, stepValue: 1.0) {
-                updateHydration()
-            }
-            .onChange(of: doughAmount) {
-                formattedDoughAmount = String(format: "Dough: %.0f", doughAmount)
-            }
+                    LinkedScaleView(variable: $viewModel.flour, title: Constants.flour, maxValue: 1000, stepValue: 1, unit: Constants.doughPrimaryUnit, itemWidth: 1.5, itemSpacing: 10.0, secondaryUnit: showImperial ? Constants.doughSecondaryUnit : "", secondaryValue: viewModel.doughSecondary, hapticGenerator: $hapticGenerator)
 
-            LinkedScaleView(variable: $waterAmount, formattedVariable: $formattedWaterAmount, maxValue: 1000.0, stepValue: 1.0) {
-                updateHydration()
+                    LinkedScaleView(variable: $viewModel.water, title: Constants.water, maxValue: 1000, stepValue: 1, unit: Constants.waterPrimaryUnit, itemWidth: 1.5, itemSpacing: 10.0, secondaryUnit: showImperial ? Constants.waterSecondaryUnit : "", secondaryValue: viewModel.waterSecondary, hapticGenerator: $hapticGenerator)
+
+                    LinkedScaleView(variable: $viewModel.hydrationPercent, title: Constants.hydration, maxValue: 100, stepValue: 1, unit: "%", itemWidth: 2.0, itemSpacing: 12.0, secondaryUnit: "", secondaryValue: "", fillColor: Color.yellow.opacity(0.2), hapticGenerator: $hapticGenerator)
+                }
             }
-            .onChange(of: waterAmount) {
-                formattedWaterAmount = String(format: "Water: %.0f", waterAmount)
+            .onAppear {
+                if hapticGenerator == nil {
+                    hapticGenerator = UISelectionFeedbackGenerator()
+                }
             }
+            .padding(.vertical)
+            .toolbar {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Button {
+                        tooglePresets.toggle()
+                    } label: {
+                        Image(systemName: "checklist")
+                    }
+                }
+
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Button {
+                        toggleSettings.toggle()
+                    } label: {
+                        Image(systemName: "gearshape")
+                    }
+                }
+            }
+            .sheet(isPresented: $tooglePresets) {
+                PresetPickerView(presets: presets) { updatedSelection in
+                    saveSelection(updatedSelection)
+                }
+            }
+            .sheet(isPresented: $toggleSettings) {
+                SettingsView()
+            }
+            .navigationTitle(Constants.title)
+            .navigationBarTitleDisplayMode(.inline)
         }
-        .padding()
-        .onAppear {
+        .task {
 
-            doughAmount = 500.0
-            waterAmount = 300.0
-
-            updateHydration()
+            loadPresets()
         }
     }
 
-    private func updateHydration() {
+    private func loadPresets() {
 
-        guard doughAmount > 0 else {
-            hydrationPercent = 0
-            return
+        if let value = UserDefaults.standard.object(forKey: "presets") as? Data {
+
+            let decoder = JSONDecoder()
+            if let decoded = try? decoder.decode([Preset].self, from: value) {
+                presets = decoded
+            }
+
+        } else {
+
+            let encoder = JSONEncoder()
+            presets = [
+                Preset(title: "White Bread", flour: 500, water: 300, isActive: true),
+                Preset(title: "Pizza", flour: 500, water: 325, isActive: true),
+                Preset(title: "Bagels", flour: 550, water: 308, isActive: true),
+                Preset(title: "Focaccia", flour: 550, water: 412, isActive: true)
+            ]
+            let encodedData = try? encoder.encode(presets)
+
+            UserDefaults.standard.set(encodedData, forKey: "presets")
         }
-
-        hydrationPercent = waterAmount / doughAmount
-
-        //print("Updatding hydration: \(hydrationPercent) = \(waterAmount) / \(doughAmount)")
     }
 
-    private func updateWater() {
+    private var presetButtons: some View {
 
-        guard hydrationPercent > 0 else {
-            waterAmount = 0
-            return
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack {
+                ForEach(presets.filter { $0.isActive}) { preset in
+                    Button {
+                        viewModel.setMeasurements(from: preset)
+                        hapticGenerator?.selectionChanged()
+                    } label: {
+                        Text(preset.title)
+                    }
+                    .buttonStyle(.bordered)
+                    .foregroundStyle(Color.primary)
+                }
+            }
+            .padding(.horizontal)
+            .contentMargins(.horizontal, 20)
         }
+    }
 
-        waterAmount = doughAmount * hydrationPercent
+    private func saveSelection(_ updatedSelection: [Preset]) {
+
+        presets = updatedSelection
+
+        let encoder = JSONEncoder()
+        let encodedData = try? encoder.encode(presets)
+
+        UserDefaults.standard.set(encodedData, forKey: "presets")
     }
 }
 
