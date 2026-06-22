@@ -31,7 +31,7 @@ struct ContentView: View {
 
                 VStack(spacing: 40) {
 
-                    LinkedScaleView(variable: $viewModel.dough, title: Constants.flour, maxValue: 1000, stepValue: 1, unit: Constants.doughPrimaryUnit, itemWidth: 1.5, itemSpacing: 10.0, secondaryUnit: showImperial ? Constants.doughSecondaryUnit : "", secondaryValue: viewModel.doughSecondary, hapticGenerator: $hapticGenerator)
+                    LinkedScaleView(variable: $viewModel.flour, title: Constants.flour, maxValue: 1000, stepValue: 1, unit: Constants.doughPrimaryUnit, itemWidth: 1.5, itemSpacing: 10.0, secondaryUnit: showImperial ? Constants.doughSecondaryUnit : "", secondaryValue: viewModel.doughSecondary, hapticGenerator: $hapticGenerator)
 
                     LinkedScaleView(variable: $viewModel.water, title: Constants.water, maxValue: 1000, stepValue: 1, unit: Constants.waterPrimaryUnit, itemWidth: 1.5, itemSpacing: 10.0, secondaryUnit: showImperial ? Constants.waterSecondaryUnit : "", secondaryValue: viewModel.waterSecondary, hapticGenerator: $hapticGenerator)
 
@@ -108,7 +108,8 @@ struct ContentView: View {
             HStack {
                 ForEach(presets.filter { $0.isActive}) { preset in
                     Button {
-
+                        viewModel.setMeasurements(from: preset)
+                        hapticGenerator?.selectionChanged()
                     } label: {
                         Text(preset.title)
                     }

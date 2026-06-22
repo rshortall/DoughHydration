@@ -10,7 +10,7 @@ import SwiftUI
 @Observable
 class HydrationModel {
 
-    var dough: Int = 500
+    var flour: Int = 500
 
     var water: Int = 300
 
@@ -19,13 +19,13 @@ class HydrationModel {
             if water <= 0 {
                 return 0
             } else {
-                return Double(water) / Double(dough)
+                return Double(water) / Double(flour)
             }
         } set {
             if newValue <= 0 {
                 water = 0
             } else {
-                water = Int(Double(dough) * newValue)
+                water = Int(Double(flour) * newValue)
             }
         }
     }
@@ -40,12 +40,17 @@ class HydrationModel {
     var doughSecondary: String {
 
         // grams to cups
-        String(format: "%.1f", (Double(dough) * 0.8) / 100.0)
+        String(format: "%.1f", (Double(flour) * 0.8) / 100.0)
     }
 
     var waterSecondary: String {
 
         // mls to fluid ounces
         String(format: "%.1f", Double(water) * 0.033)
+    }
+
+    func setMeasurements(from preset: Preset) {
+        flour = preset.flour
+        water = preset.water
     }
 }
