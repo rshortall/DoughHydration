@@ -88,18 +88,21 @@ struct ContentView: View {
             }
 
         } else {
-
-            let encoder = JSONEncoder()
-            presets = [
-                Preset(title: "White Bread", flour: 500, water: 300, isActive: true),
-                Preset(title: "Pizza", flour: 500, water: 325, isActive: true),
-                Preset(title: "Bagels", flour: 550, water: 308, isActive: true),
-                Preset(title: "Focaccia", flour: 550, water: 412, isActive: true)
-            ]
-            let encodedData = try? encoder.encode(presets)
-
-            UserDefaults.standard.set(encodedData, forKey: "presets")
+            createPresets()
         }
+    }
+
+    private func createPresets() {
+        let encoder = JSONEncoder()
+        presets = [
+            Preset(title: "White Bread", flour: 500, water: 300, isActive: true),
+            Preset(title: "Pizza", flour: 500, water: 325, isActive: true),
+            Preset(title: "Bagels", flour: 550, water: 308, isActive: true),
+            Preset(title: "Focaccia", flour: 550, water: 412, isActive: true)
+        ]
+        let encodedData = try? encoder.encode(presets)
+
+        UserDefaults.standard.set(encodedData, forKey: "presets")
     }
 
     private var presetButtons: some View {
