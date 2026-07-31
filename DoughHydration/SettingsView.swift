@@ -19,7 +19,7 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 Section {
-                    Toggle("Show Prest Buttons", isOn: $showPresets)
+                    Toggle("Show Preset Buttons", isOn: $showPresets)
                 } header: {
                     Text("Presets")
                 }

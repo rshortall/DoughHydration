@@ -95,7 +95,8 @@ struct ContentView: View {
     private func createPresets() {
         let encoder = JSONEncoder()
         presets = [
-            Preset(title: "White Bread", flour: 500, water: 300, isActive: true),
+            Preset(title: "Sandwich Bread", flour: 600, water: 360, isActive: true),
+            Preset(title: "Baguette", flour: 500, water: 370, isActive: true),
             Preset(title: "Pizza", flour: 500, water: 325, isActive: true),
             Preset(title: "Bagels", flour: 550, water: 308, isActive: true),
             Preset(title: "Focaccia", flour: 550, water: 412, isActive: true)
@@ -112,12 +113,16 @@ struct ContentView: View {
                 ForEach(presets.filter { $0.isActive}) { preset in
                     Button {
                         viewModel.setMeasurements(from: preset)
-                        hapticGenerator?.selectionChanged()
+                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                     } label: {
                         Text(preset.title)
+                            .fontWeight(.semibold)
                     }
-                    .buttonStyle(.bordered)
-                    .foregroundStyle(Color.primary)
+                    .padding(.vertical, 10)
+                    .padding(.horizontal, 14)
+                    .foregroundStyle(.white)
+                    .background(.secondary)
+                    .clipShape(.capsule)
                 }
             }
             .padding(.horizontal)
