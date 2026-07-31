@@ -9,7 +9,7 @@ import Foundation
 
 struct Constants {
 
-    static let title = "Hydration = Flour / Water"
+    static let title = "Hydration = Water / Flour"
     static let hydration = "Hydration"
     static let flour = "Flour"
     static let water = "Water"
